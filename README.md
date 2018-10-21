@@ -3,39 +3,18 @@
 This repository is a tutorial for building a complete application on top of the
 Tendermint ABCI, implementing a key-value store with a compare-and-swap API.
 
-## Tendermint and Cosmos
+1. [The goal](#the-goal)
+1. [Tendermint v Cosmos](#tendermint-v-cosmos)
+1. [Tendermint concepts](#tendermint-concepts)
+1. [ABCI methods](#abci-methods)
+1. [Our demo application](#our-demo-application)
+1. [The abci-cli](#the-abci-cli)
+1. [System architecture](#system-architecture)
+1. [Operations](#operations)
+1. [Conclusion](#conclusion)
 
-[Tendermint][tendermint] is a distributed, byzantine fault-tolerant consensus
-system designed to replicate arbitrary state machines. You can build on top of
-Tendermint by plugging into it at different levels of abstraction, depending on
-what kind of application you're building.
 
-[tendermint]: https://www.tendermint.com
-
-At the lowest level, Tendermint defines an API, called the Application
-BlockChain Interface, or ABCI. Applications that implement the ABCI can be
-replicated with the Tendermint protocol.
-
-One level above Tendermint is [Cosmos][cosmos], a federated network of
-blockchains; or, more accurately, the [Cosmos SDK][sdk], which allows users to
-build Cosmos-compatible applications. The [Basecoin][basecoin] demo application 
-is built on the Cosmos SDK.
-
-[cosmos]: https://cosmos.network
-[sdk]: https://cosmos.network/docs/getting-started/installation.html
-[basecoin]: https://cosmos.network/docs/sdk/core/app5.html
-
-```
-+------------+ +------------+
-| Cosmos SDK | | This repo  |
-+------------+-+------------+
-| ABCI                      |
-+---------------------------+
-| Tendermint machinery      |
-+---------------------------+
-```
-
-## Goal
+## The goal
 
 We're going to build a distributed system in Go. Each node will have an HTTP API
 implementing compare-and-swap semantics for a key-value store. The keys and
@@ -63,7 +42,42 @@ Hopefully, this exercise will expose you to enough of the Tendermint programming
 model that you can confidently build your own Tendermint ABCI applications.
 
 
-## Concepts
+## Tendermint v Cosmos
+
+[Tendermint][tendermint] is a distributed, byzantine fault-tolerant consensus
+system designed to replicate arbitrary state machines. You can build on top of
+Tendermint by plugging into it at different levels of abstraction, depending on
+what kind of application you're building.
+
+[tendermint]: https://www.tendermint.com
+
+At the lowest level, Tendermint defines an API, called the Application
+BlockChain Interface, or ABCI. Applications that implement the ABCI can be
+replicated with the Tendermint protocol.
+
+One level above Tendermint is [Cosmos][cosmos], a federated network of
+blockchains; or, more accurately, the [Cosmos SDK][sdk], which allows users to
+build Cosmos-compatible applications. The [Basecoin][basecoin] demo application 
+is built on the Cosmos SDK.
+
+[cosmos]: https://cosmos.network
+[sdk]: https://cosmos.network/docs/getting-started/installation.html
+[basecoin]: https://cosmos.network/docs/sdk/core/app5.html
+
+```
++------------+
+| Basecoin   |
++------------+ +------------+
+| Cosmos SDK | | This repo  |
++------------+-+------------+
+| ABCI                      |
++---------------------------+
+| Tendermint                |
++---------------------------+
+```
+
+
+## Tendermint concepts
 
 ### Understanding ABCI
 
@@ -452,28 +466,102 @@ application persist its state to disk during commit.
 [commit]: https://www.tendermint.com/docs/app-dev/app-development.html#commit
 
 
-## Coda: abci-cli
+## Our demo application
+
+The code for the ABCI application, implementing our key-value store with compare-and-swap semantics,
+is available in [internal/cas/application.go][application]. The code for the state layer
+is available in [internal/cas/state.go][state].
+
+[application]: https://github.com/6thc/tendermint-cas-demo/blob/master/internal/cas/application.go
+[state]: https://github.com/6thc/tendermint-cas-demo/blob/master/internal/cas/state.go
 
 
-## Architecture
+## The abci-cli
+
+Once you have a type implementing the ABCI application interface, you can do
+basic tests by wrapping it with an [abci/server.NewServer][abcinewserver] and
+calling it with a tool called [`abci-cli`][abcicli]. 
+
+[abcinewserver]: https://godoc.org/github.com/tendermint/tendermint/abci/server#NewServer
+[abcicli]: https://tendermint.com/docs/app-dev/abci-cli.html
+
+The code to mount your application will look something like this.
+
+```go
+func main() {
+	app := newMyApplication()
+	server, err := server.NewServer("127.0.0.1:8080", "socket", app)
+	if err != nil {
+		log.Fatal(err)
+	}
+	server.Start()
+}
+```
+
+See [the `abci-cli` documentation][abcicli] for more details.
+
+
+## System architecture
 
 Now you have a working ABCI application. How can you connect it to the
 Tendermint machinery, so that it can communicate with other, identical nodes in
 a network?
 
-### yourapp.Application
+Recall the original [Tendermint architecture diagram][diagram]. The Tendermint
+node, the green box, handles the heavy work of consensus. The validator signer,
+the purple box, can also be provided by Tendermint, and validates blocks, moving
+consensus forward. Our ABCI application, the blue box, is connected to the node
+exclusively. And our user API, in the diagram represented by Cosmos Voyager and
+the Light Client Daemon, is also connected only to the node.
 
-### tendermint.Node
+These are the logical components, and they can be deployed in different physical
+arrangements depending on your needs. In the diagram, the Tendermint core node,
+the ABCI application, and the validator signer are all co-located on the same
+circle, representing a full node. The lines between them indicate communication,
+but that communication can occur in different ways. The components can be built
+into the same binary, executed as a single process, and the communication occur
+exclusively in-memory. Or, the components can be built into separate binaries,
+executed as different processes on the same machine, and the communication occur
+over e.g. UNIX domain sockets. Or, the components could be deployed to different
+physical machines, and the communication occur over e.g. TCP connections. 
 
-### Network topologies
+Similarly, in the diagram, the user is expected to interact with the network by
+using the Cosmos Voyager web application, deployed adjacent to a Light Client
+Daemon on the user's machine, speaking REST (HTTP) to each other. The Light
+Client Daemon connects to a Tendermint core node over HTTP, and performs the
+e.g. ABCIQuery and BroadcastTx requests that way.
+
+The diagram has things arranged in this way, but you don't necessarily need to
+copy it. For example, a more secure deployment might move the validators onto
+their own single-purpose machines, heavily firewalled from the rest of the
+internet, with only a single connection to a different, larger set of full
+nodes, running only Tendermint core and your ABCI application. 
+
+For our demo, we'll model the user API as a separate HTTP API, but built into
+the same binary as all the other components, and run in the same process. The
+HTTP API is defined in [cmd/tendermint-cas-demo/cas_api.go][casapi], and all of
+the components are wired together in [cmd/tendermint-cas-demo/main.go][main].
+
+[casapi]: https://github.com/6thc/tendermint-cas-demo/blob/master/cmd/tendermint-cas-demo/cas_api.go
+[main]: https://github.com/6thc/tendermint-cas-demo/blob/master/cmd/tendermint-cas-demo/main.go
 
 
 ## Operations
 
-Now you have a working server binary. What else does it need to be successfully
-configured and deployed?
+The Tendermint node requires quite a lot of configuration to successfully start,
+including several files in well-defined locations on disk, such as the JSON
+genesis file, a TOML configuration file, and cryptographic keys for the node
+itself and its validators. The helper scripts [bootstrap_1][bootstrap1] and
+[bootstrap_3][bootstrap3] create these file structures for one- and three-node
+clusters on the local machine respectively. Studying them should give you a
+good start toward scripting your own deployment.
 
-### Genesis
+[bootstrap1]: https://github.com/6thc/tendermint-cas-demo/blob/master/bootstrap_1.fish
+[bootstrap3]: https://github.com/6thc/tendermint-cas-demo/blob/master/bootstrap_3.fish
 
-### Configuration
 
+## Conclusion
+
+Thanks for your time and attention; I hope it's been helpful. If you have any
+further questions, or things in this repo don't work as expected, please file an
+issue.
