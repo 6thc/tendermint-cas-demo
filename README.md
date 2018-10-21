@@ -147,9 +147,8 @@ Three ABCI methods manage state machine initialization.
 InitChain is called once, when a node starts for the first time. It tells the
 application about some aspects of the state machine. or chain, from Tendermint's
 perspective, including the chain ID, consensus parameters, and any initial
-application state that's been set by the network operator in the genesis file.
-The application can use this information to make itself ready to receive
-transactions.
+application state that's been provided by the network operator. The application
+can use this information to make itself ready to receive transactions.
 
 SetOption may be called to set arbitrary application configuration parameters.
 This is only done if by user request, and Tendermint doesn't interpret these
@@ -194,10 +193,12 @@ To support CheckTx and the mempool connection, it's recommended that
 applications actually keep two separate in-memory representations of their
 state: the consensus state, updated by DeliverTx; and the mempool state, updated
 by CheckTx. The mempool state should be updated by CheckTx transactions in the
-same way the consensus state is updated by DeliverTx transactions, with one important difference: when the consensus state is committed by Commit, it should be copied to
-and fully overwrite the mempool state. This is because Tendermint may deliver the
-same transaction via CheckTx more than once, though it will only do so if that
-transaction is checked but doesn't make it in to the consensus block.
+same way the consensus state is updated by DeliverTx transactions, with one
+important difference: when the consensus state is committed by Commit, it should
+be copied to and fully overwrite the mempool state. This is because Tendermint
+may deliver the same transaction via CheckTx more than once, though it will only
+do so if that transaction is checked but doesn't make it in to the consensus
+block.
 
 To be clear, this step is optional. Applications may choose to skip managing a
 separate mempool state, and simply return an OK result for every CheckTx call.
@@ -246,17 +247,17 @@ about each ABCI method.
 
 RequestInfo
 
-- Version: The version of Tendermint, e.g. "0.25.0".
+- **Version**: The version of Tendermint, e.g. "0.25.0".
 
 ResponseInfo
-- Data: An arbitrary string containing information about the application, not
-  parsed by Tendermint. Optional.
-- Version: An arbitrary string containing the version of the application, used
-  in the [Tendermint version handshake][versionhandshake]. Optional.
-- LastBlockHeight: The height of the blockchain (number of commits) on this
+- **Data**: An arbitrary string containing information about the application,
+  not parsed by Tendermint. Optional.
+- **Version**: An arbitrary string containing the version of the application,
+  used in the [Tendermint version handshake][versionhandshake]. Optional.
+- **LastBlockHeight**: The height of the blockchain (number of commits) on this
   node. Taken from persisted consensus state. Required.
-- LastBlockAppHash: The SHA256 hash of the last committed application state on
-  this node. Taken from persisted consensus state. Required.
+- **LastBlockAppHash**: The SHA256 hash of the last committed application state
+  on this node. Taken from persisted consensus state. Required.
 
 [versionhandshake]: https://github.com/tendermint/tendermint/blob/master/docs/spec/p2p/peer.md#tendermint-version-handshake
 
@@ -266,16 +267,16 @@ See [Initialization](#initialization).
 
 RequestSetOption
 
-- Key: An arbitrary string defining the option key.
-- Value: An arbitrary string defining the option value.
+- **Key**: An arbitrary string defining the option key.
+- **Value**: An arbitrary string defining the option value.
 
 ResponseSetOption
 
-- Code: Response code; zero for OK, non-zero for error. Required.
-- Log: Arbitrary string containing non-deterministic data intended for literal
-  output via the application's logger. Optional.
-- Info: Arbitrary string containing non-deterministic data in addition to log.
-  Optional.
+- **Code**: Response code; zero for OK, non-zero for error. Required.
+- **Log**: Arbitrary string containing non-deterministic data intended for
+  literal output via the application's logger. Optional.
+- **Info**: Arbitrary string containing non-deterministic data in addition to
+  log. Optional.
 
 See [Initialization](#initialization).
 
@@ -283,20 +284,20 @@ See [Initialization](#initialization).
 
 RequestInitChain
 
-- Time: The timestamp in the genesis file.
-- ChainId: The chain ID string in the genesis file.
-- ConsensusParams: Parameters that govern Tendermint's consensus behavior.
-- Validators: The current set of validator nodes in the network.
-- AppStateBytes: Initial state, provided in the genesis file, that a node
+- **Time**: The timestamp in the genesis file.
+- **ChainId**: The chain ID string in the genesis file.
+- **ConsensusParams**: Parameters that govern Tendermint's consensus behavior.
+- **Validators**: The current set of validator nodes in the network.
+- **AppStateBytes**: Initial state, provided in the genesis file, that a node
   starting for the first time may need to make itself ready to receive
   transactions.
 
 ResponseInitChain
 
-- ConsensusParams: Any changes to the proposed consensus parameters that this
-  node would like to propose. Optional.
-- Validators: Any changes to the set of validators that this node would like to
-  propose. Optional.
+- **ConsensusParams**: Any changes to the proposed consensus parameters that
+  this node would like to propose. Optional.
+- **Validators**: Any changes to the set of validators that this node would like
+  to propose. Optional.
 
 See [Initialization](#initialization). ConsensusParams and Validators are beyond
 the scope of this document, see the official documentation for details.
@@ -305,29 +306,30 @@ the scope of this document, see the official documentation for details.
 
 RequestQuery
 
-- Data: The byte array from the user request.
-- Path: The path string from the user request.
-- Height: The desired height of the blockchain (in effect, the version of the
-  state) against which the query should be run. A height of zero means the most
-  recent state. To support this parameter, state needs to be implemented using 
-  a version-aware data structure, e.g. [this IAVL tree][iavl].
-- Prove: If true, include a Merkle proof of the query results in the response.
+- **Data**: The byte array from the user request.
+- **Path**: The path string from the user request.
+- **Height**: The desired height of the blockchain (in effect, the version of
+  the state) against which the query should be run. A height of zero means the
+  most recent state. To support this parameter, state needs to be implemented
+  using a version-aware data structure, e.g. [this IAVL tree][iavl].
+- **Prove**: If true, include a Merkle proof of the query results in the
+  response.
 
 [iavl]: https://github.com/tendermint/iavl
 
 ResponseQuery
 
-- Code: Response code; zero for OK, non-zero for error. Required.
-- Log: Arbitrary string containing non-deterministic data intended for literal
-  output via the application's logger. Optional.
-- Info: Arbitrary string containing non-deterministic data in addition to log.
-  Optional.
-- Index: Related to the Merkle proof, if requested. Optional.
-- Key: A byte array containing the key that's returned. Optional.
-- Value: A byte array containing the data of the query response. Optional.
-- Proof: A byte array containing the Merkle proof of the query, if requested.
-  Optional.
-- Height: The height of the blockchain (in effect, the version of the state)
+- **Code**: Response code; zero for OK, non-zero for error. Required.
+- **Log**: Arbitrary string containing non-deterministic data intended for
+  literal output via the application's logger. Optional.
+- **Info**: Arbitrary string containing non-deterministic data in addition to
+  log. Optional.
+- **Index**: Related to the Merkle proof, if requested. Optional.
+- **Key**: A byte array containing the key that's returned. Optional.
+- **Value**: A byte array containing the data of the query response. Optional.
+- **Proof**: A byte array containing the Merkle proof of the query, if
+  requested. Optional.
+- **Height**: The height of the blockchain (in effect, the version of the state)
   against which the query was run. Optional.
 
 See [Reading application state](#reading-application-state) and
@@ -347,11 +349,16 @@ future. These are all application decisions.
 
 RequestBeginBlock
 
-- TODO
+- **Hash**: The hash of the block.
+- **Header**: The header details for the block.
+- **LastCommitInfo**: Details about the most recent (previous) commit.
+- **ByzantineValidators**: Evidence of malicious validators, if any, during the
+  most recent (previous) commit.
 
 ResponseBeginBlock
 
-- TODO
+- **Tags**: A set of key-value pairs that can be used to denote properties about
+  this block, which can later be searched. Optional.
 
 See [Writing application state](#writing-application-state). See also
 [Application Development Guide: BeginBlock][beginblock].
@@ -360,11 +367,89 @@ See [Writing application state](#writing-application-state). See also
 
 ### CheckTx
 
+The only argument is an opaque byte slice, proxied without modification from the
+RPC connection DeliverTx method to the application.
+
+ResponseCheckTx
+
+- **Code**: Response code; zero for OK, non-zero for error. Required.
+- **Data**: Arbitrary byte array containing any result from the transaction.
+  Optional.
+- **Log**: Arbitrary string containing non-deterministic data intended for
+  literal output via the application's logger. Optional.
+- **Info**: Arbitrary string containing non-deterministic data in addition to
+  log. Optional.
+- **GasWanted**: Amount of gas request for the transaction. Optional.
+- **GasUsed**: Amount of gas consumed by the transaction. Optional.
+- **Tags**: A set of key-value pairs that can be used to denote properties about
+  this transaction, which can later be searched. Optional.
+
+See [Connections](#connections). See also [Mempool Connection][mempoolconn].
+Observe that CheckTx has exactly the same signature as DeliverTx; the only
+difference is how to interpret the transaction body, i.e. which state (if any)
+to update.
+
+[mempoolconn]: https://www.tendermint.com/docs/app-dev/app-development.html#mempool-connection
+
 ### DeliverTx
+
+The only argument is an opaque byte slice, proxied without modification from the
+RPC connection DeliverTx method to the application.
+
+ResponseDeliverTx
+
+- **Code**: Response code; zero for OK, non-zero for error. Required.
+- **Data**: Arbitrary byte array containing any result from the transaction.
+  Optional.
+- **Log**: Arbitrary string containing non-deterministic data intended for
+  literal output via the application's logger. Optional.
+- **Info**: Arbitrary string containing non-deterministic data in addition to
+  log. Optional.
+- **GasWanted**: Amount of gas request for the transaction. Optional.
+- **GasUsed**: Amount of gas consumed by the transaction. Optional.
+- **Tags**: A set of key-value pairs that can be used to denote properties about
+  this transaction, which can later be searched. Optional.
+
+See [Writing application state](#writing-application-state) and
+[Connections](#connections). See also [DeliverTx][delivertx]. Observe that
+DeliverTx has exactly the same signature as CheckTx; the only difference is how
+to interpret the transaction body, i.e. which state (if any) to update.
+
+[delivertx]: https://www.tendermint.com/docs/app-dev/app-development.html#delivertx
 
 ### EndBlock
 
+RequestEndBlock
+
+- **Height**: The height of the block.
+
+ResponseEndBlock
+
+- **ValidatorUpdates**: Updates to the set of validators, if any. Optional.
+- **ConsensusParamsUpdate**: Updates to the consensus parameters, if any.
+  Optional.
+- **Tags**: A set of key-value pairs that can be used to denote properties about
+  this block, which can later be searched. Optional.
+
+See [Writing application state](#writing-application-state) and
+[Connections](#connections). See also [EndBlock][endblock]. 
+
+[endblock]: https://www.tendermint.com/docs/app-dev/app-development.html#endblock
+
 ### Commit
+
+Commit requests have no parameters.
+
+ResponseCommit
+
+- **Data**: A deterministic (Merkle) hash of the state root of the application.
+  Required.
+
+See [Writing application state](#writing-application-state) and
+[Connections](#connections). See also [Commit][commit]. It's expected that the
+application persist its state to disk during commit.
+
+[commit]: https://www.tendermint.com/docs/app-dev/app-development.html#commit
 
 
 ## Coda: abci-cli
