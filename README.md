@@ -159,7 +159,7 @@ application state from persistent storage into memory.
 Three ABCI methods manage state machine initialization.
 
 InitChain is called once, when a node starts for the first time. It tells the
-application about some aspects of the state machine. or chain, from Tendermint's
+application about some aspects of the state machine, or chain, from Tendermint's
 perspective, including the chain ID, consensus parameters, and any initial
 application state that's been provided by the network operator. The application
 can use this information to make itself ready to receive transactions.
@@ -382,7 +382,7 @@ See [Writing application state](#writing-application-state). See also
 ### CheckTx
 
 The only argument is an opaque byte slice, proxied without modification from the
-RPC connection DeliverTx method to the application.
+RPC connection's BroadcastTx methods to the application.
 
 ResponseCheckTx
 
@@ -408,7 +408,7 @@ to update.
 ### DeliverTx
 
 The only argument is an opaque byte slice, proxied without modification from the
-RPC connection DeliverTx method to the application.
+RPC connection BroadcastTx methods to the application.
 
 ResponseDeliverTx
 
