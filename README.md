@@ -1,4 +1,4 @@
-# Tendermint CAS demo
+# Tendermint CAS demo [![Travis CI](https://travis-ci.org/6thc/tendermint-cas-demo.svg?branch=master)](https://travis-ci.org/6thc/tendermint-cas-demo)
 
 This repository is a tutorial for building a complete application on top of the
 Tendermint ABCI, implementing a key-value store with a compare-and-swap API.
