@@ -1,33 +1,23 @@
-#!/usr/bin/env fish
+#!/usr/bin/env sh
 
-function prereqs
-    echo
-    echo "    Download Tendermint v0.25.0 for your system from"
-    echo "    https://github.com/tendermint/tendermint/releases/tag/v0.25.0"
-    echo "    and place the tendermint binary in your PATH."
-    echo
-end
+set -e
 
-if test (type tendermint >/dev/null 2>&1)
-    echo tendermint binary is required in PATH
-    prereqs
+if [ $# -ne 1 ]
+then
+    echo "usage: $0 <tendermint binary>"
     exit
-end
+fi
 
-if test ! (string match -r 0.25.0 (tendermint version))
-    echo tendermint v0.25.0 is required
-    prereqs
-    exit
-end
+tendermint_binary=$1
 
-echo removing any old state
-rm -rf tendermint_zero
+echo clearing any old state...
+rm -rf tendermint_zero/
 rm -rf zero.json
 
-echo initializing node
-tendermint init --home tendermint_zero >/dev/null 2>&1
+echo initializing one node...
+${tendermint_binary} init --home tendermint_zero >/dev/null
 
-echo producing config files
+echo producing config file...
 echo 'moniker = "zero"'                 > tendermint_zero/config/config.toml
 echo 'proxy_app = ""'                  >> tendermint_zero/config/config.toml
 echo ''                                >> tendermint_zero/config/config.toml
@@ -39,10 +29,10 @@ echo 'laddr = "tcp://127.0.0.1:10000"' >> tendermint_zero/config/config.toml
 
 echo now you can run one node
 echo
-echo "    td -api-addr 127.0.0.1:8081 -app-file zero.json -tendermint-dir tendermint_zero"
+echo "    ./tendermint-cas-demo -api-addr 127.0.0.1:8081 -app-file zero.json -tendermint-dir tendermint_zero"
 echo
 echo other fun things to try
-echo 
+echo
 echo "    watch -n1 -- cat zero.json                         # watch state being updated"
 echo "    curl -Ss -XPOST 'localhost:8081/x?new=one'         # set x=one"
 echo "    curl -Ss -XPOST 'localhost:8081/x?old=one&new=two' # set x=two"

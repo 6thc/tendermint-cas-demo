@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	fs := flag.NewFlagSet("td", flag.ExitOnError)
+	fs := flag.NewFlagSet("tendermint-cas-demo", flag.ExitOnError)
 	var (
 		apiAddr           = fs.String("api-addr", "127.0.0.1:8081", "HTTP API address")
 		appFile           = fs.String("app-file", "db.json", "application persistence file")
@@ -39,7 +39,7 @@ func main() {
 		tendermintDir     = fs.String("tendermint-dir", "tendermint", "Tendermint directory (config, data, etc.)")
 		tendermintVerbose = fs.Bool("tendermint-verbose", false, "verbose logging of Tendermint information")
 	)
-	fs.Usage = usage.For(fs, "td [flags]")
+	fs.Usage = usage.For(fs, "tendermint-cas-demo [flags]")
 	fs.Parse(os.Args[1:])
 
 	var logger log.Logger

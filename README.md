@@ -11,7 +11,7 @@ Tendermint ABCI, implementing a key-value store with a compare-and-swap API.
 1. [The abci-cli](#the-abci-cli)
 1. [System architecture](#system-architecture)
 1. [Operations](#operations)
-1. [Conclusion](#conclusion)
+1. [Building and running](#building-and-running)
 
 
 ## The goal
@@ -556,12 +556,72 @@ itself and its validators. The helper scripts [bootstrap_1][bootstrap1] and
 clusters on the local machine respectively. Studying them should give you a
 good start toward scripting your own deployment.
 
-[bootstrap1]: https://github.com/6thc/tendermint-cas-demo/blob/master/bootstrap_1.fish
-[bootstrap3]: https://github.com/6thc/tendermint-cas-demo/blob/master/bootstrap_3.fish
+[bootstrap1]: https://github.com/6thc/tendermint-cas-demo/blob/master/bootstrap_1.sh
+[bootstrap3]: https://github.com/6thc/tendermint-cas-demo/blob/master/bootstrap_3.sh
 
 
-## Conclusion
+## Building and running
 
-Thanks for your time and attention; I hope it's been helpful. If you have any
-further questions, or things in this repo don't work as expected, please file an
-issue.
+Building this repository requires [a working Go installation](https://golang.org).
+Most operating system package managers ship a reasonably up-to-date version of the
+Go development environment. If you're on a Mac and using Homebrew, I recommend
+
+```
+$ brew install go
+```
+
+Clone this repo into the correct location in your GOPATH.
+
+```
+$ mkdir -p $(go env GOPATH)/src/github.com/6thc
+$ cd $(go env GOPATH)/src/github.com/6thc
+$ git clone git@github.com:6thc/tendermint-cas-demo
+$ cd tendermint-cas-demo
+```
+
+Then, build the binary.
+
+```
+$ make
+$ ./tendermint-cas-demo -h
+USAGE
+  tendermint-cas-demo [flags]
+
+FLAGS
+  -api-addr 127.0.0.1:8081    HTTP API address
+  -app-file db.json           application persistence file
+  -app-verbose false          verbose logging of application information
+  -tendermint-dir tendermint  Tendermint directory (config, data, etc.)
+  -tendermint-verbose false   verbose logging of Tendermint information
+```
+
+You can also use the Makefile to bootstrap a 1- or 3-node-cluster on your local
+machine. Once everything is set up, it will print instructions on how to start
+the cluster.
+
+```
+$ make bootstrap_3
+downloading tendermint_0.25.0_darwin_amd64.zip...
+Archive:  tendermint_0.25.0_darwin_amd64.zip
+tendermint_0c9c3292c918617624f6f3fbcd95eceade18bcd5_darwin_amd64
+ extracting: tendermint
+clearing any old state...
+initializing three nodes...
+capturing validators...
+capturing peer addresses...
+building a common genesis file...
+writing common genesis file...
+producing config files...
+now you can run three nodes
+
+    ./tendermint-cas-demo -api-addr 127.0.0.1:8081 -app-file a.json -tendermint-dir tendermint_a
+    ./tendermint-cas-demo -api-addr 127.0.0.1:8082 -app-file b.json -tendermint-dir tendermint_b
+    ./tendermint-cas-demo -api-addr 127.0.0.1:8083 -app-file c.json -tendermint-dir tendermint_c
+
+other fun things to try
+
+    watch -n1 -- cat ?.json                            # watch state being updated
+    curl -Ss -XPOST 'localhost:8081/x?new=one'         # set x=one
+    curl -Ss -XPOST 'localhost:8082/x?old=one&new=two' # set x=two
+    curl -Ss -XGET  'localhost:8083/x'                 # get x
+```
